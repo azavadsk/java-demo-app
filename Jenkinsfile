@@ -212,15 +212,11 @@ spec:
         stage('Build Zarf Package') {
             steps {
                 container('builder') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'rustfs-credentials',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )]) {
                     sh """
-                        apk add --no-cache curl aws-cli 2>/dev/null || true
+                        apk add --no-cache aws-cli 2>/dev/null || true
 
                         echo "Downloading Zarf ${ZARF_VERSION} from RustFS..."
+                        AWS_ACCESS_KEY_ID=rustfsadmin AWS_SECRET_ACCESS_KEY=rustfsadmin \
                         aws s3 cp s3://${RUSTFS_BUCKET}/zarf_${ZARF_VERSION}_Linux_amd64 \
                             /usr/local/bin/zarf \
                             --endpoint-url ${RUSTFS_URL}
@@ -242,7 +238,6 @@ spec:
 
                         ls -lh packages/
                     """
-                    }
                 }
             }
         }
