@@ -94,9 +94,14 @@ spec:
             description: 'Fail the build if CVEs of this severity are found'
         )
         booleanParam(
+            name: 'TRIVY_ENABLED',
+            defaultValue: true,
+            description: 'Run Trivy image scan — disable to skip scanning entirely'
+        )
+        booleanParam(
             name: 'TRIVY_FAIL_ON_VULN',
             defaultValue: true,
-            description: 'Fail the pipeline if Trivy finds vulnerabilities'
+            description: 'Fail the pipeline if Trivy finds vulnerabilities (only applies when TRIVY_ENABLED=true)'
         )
         booleanParam(
             name: 'UPDATE_ARGOCD',
@@ -159,6 +164,9 @@ spec:
         }
 
         stage('Scan Image — Trivy') {
+            when {
+                expression { params.TRIVY_ENABLED }
+            }
             steps {
                 container('trivy') {
                     sh """
