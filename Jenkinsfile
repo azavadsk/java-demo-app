@@ -323,6 +323,9 @@ spec:
       containers:
         - name: java-demo-app
           image: ${ZARF_REGISTRY}/java-demo-app:${params.SERVICE_VERSION}
+          env:
+            - name: APP_VERSION
+              value: "${params.SERVICE_VERSION}"
           ports:
             - containerPort: 8080
           readinessProbe:
