@@ -289,9 +289,34 @@ EOF
             steps {
                 container('builder') {
                     sh """
-                        # zarf already installed in Build Zarf Package stage (shared /usr/local/bin)
-                        cd /workspace
-                        zarf package deploy deploy/${PACKAGE_NAME} \
+                        # Build kubeconfig from in-cluster service account credentials
+                        mkdir -p /tmp/.kube
+                        APISERVER=https://kubernetes.default.svc
+                        TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                        CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+                        cat > /tmp/.kube/config <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    certificate-authority: \${CA}
+    server: \${APISERVER}
+  name: in-cluster
+contexts:
+- context:
+    cluster: in-cluster
+    user: jenkins
+  name: in-cluster
+current-context: in-cluster
+users:
+- name: jenkins
+  user:
+    token: \${TOKEN}
+EOF
+                        export KUBECONFIG=/tmp/.kube/config
+
+                        zarf package deploy /workspace/deploy/${PACKAGE_NAME} \
                             --plain-http \
                             --confirm
                         echo "Deploy complete."
@@ -384,8 +409,9 @@ EOF
             steps {
                 container('builder') {
                     sh """
-                        yum install -y kubectl 2>/dev/null || true
+                        export KUBECONFIG=/tmp/.kube/config
                         sleep 15
+                        yum install -y kubectl 2>/dev/null || true
                         kubectl get pods,svc -n java-demo-app || true
                     """
                 }
