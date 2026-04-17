@@ -1,8 +1,14 @@
 // Java Demo App — CI/CD pipeline
-// Stages: Maven build → Kaniko image → Trivy scan → Zarf package → RustFS → ArgoCD
-// Image is pushed to the Zarf internal registry by Kaniko.
-// Zarf package is built and stored in RustFS as an airgap artifact (PSA requirement).
-// ArgoCD owns all cluster deployments — no direct Kubernetes apply from the pipeline.
+// Stages: Maven build → Kaniko image → Trivy scan → Zarf package → RustFS → Zarf deploy → ArgoCD
+//
+// Why both Zarf deploy AND ArgoCD?
+//   - Zarf deploy: seeds the image into the cluster's internal registry with the correct
+//     Zarf-rewritten tag (-zarf-<hash>) and creates the private-registry pull secret.
+//     Without this the Zarf mutating webhook rewrites image refs to tags that don't exist.
+//   - ArgoCD: owns the desired cluster state (GitOps). Reconciles the Deployment manifest
+//     from Git. The Zarf webhook transparently rewrites the image ref on pod creation.
+//
+// This mirrors the PSA airgap flow: Zarf delivers the image, ArgoCD delivers the manifest.
 
 pipeline {
     agent {
@@ -312,6 +318,8 @@ spec:
       labels:
         app: java-demo-app
     spec:
+      imagePullSecrets:
+        - name: zarf-registry-pull
       containers:
         - name: java-demo-app
           image: ${ZARF_REGISTRY}/java-demo-app:${params.SERVICE_VERSION}
