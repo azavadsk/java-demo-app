@@ -57,7 +57,7 @@ spec:
 
     # Builder — Zarf, AWS CLI, kubectl, git operations
     - name: builder
-      image: alpine/git:2.43.0
+      image: amazon/aws-cli:2.15.0
       command: [sleep]
       args: [infinity]
       env:
@@ -221,8 +221,6 @@ spec:
             steps {
                 container('builder') {
                     sh """
-                        apk add --no-cache aws-cli 2>/dev/null || true
-
                         echo "Downloading Zarf ${ZARF_VERSION} from RustFS..."
                         AWS_ACCESS_KEY_ID=rustfsadmin AWS_SECRET_ACCESS_KEY=rustfsadmin \
                         aws s3 cp s3://${RUSTFS_BUCKET}/zarf_${ZARF_VERSION}_Linux_amd64 \
@@ -259,7 +257,6 @@ spec:
                         passwordVariable: 'AWS_SECRET_ACCESS_KEY'
                     )]) {
                         sh """
-                            apk add --no-cache aws-cli 2>/dev/null || true
                             cd /workspace
                             aws s3 cp packages/${PACKAGE_NAME} \
                                 s3://${RUSTFS_BUCKET}/${PACKAGE_NAME} \
@@ -317,7 +314,7 @@ spec:
                         keyFileVariable: 'SSH_KEY_FILE'
                     )]) {
                         sh """
-                            apk add --no-cache openssh-client 2>/dev/null || true
+                            yum install -y git openssh-clients 2>/dev/null || true
 
                             mkdir -p /tmp/.ssh
                             cp \$SSH_KEY_FILE /tmp/.ssh/id_rsa
@@ -390,7 +387,7 @@ EOF
             steps {
                 container('builder') {
                     sh """
-                        apk add --no-cache kubectl 2>/dev/null || true
+                        yum install -y kubectl 2>/dev/null || true
                         sleep 15
                         kubectl get pods,svc -n java-demo-app || true
                     """
