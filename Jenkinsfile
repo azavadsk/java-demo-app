@@ -228,6 +228,12 @@ spec:
                             --endpoint-url ${RUSTFS_URL}
                         chmod +x /usr/local/bin/zarf
 
+                        # Create Docker config so Zarf can pull from the internal registry
+                        mkdir -p /tmp/.docker
+                        cat > /tmp/.docker/config.json <<'EOF'
+{"auths":{"192.168.1.233:31999":{"auth":"emFyZi1wdWxsOmNoUlR5a3ZteHpEfn5hWk1kRDVoTnNEOA=="}}}
+EOF
+
                         cd /workspace
                         mkdir -p packages
 
