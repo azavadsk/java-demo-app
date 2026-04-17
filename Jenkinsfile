@@ -239,7 +239,7 @@ spec:
                             --output ./packages \
                             --architecture amd64 \
                             --set VERSION=${params.SERVICE_VERSION} \
-                            --insecure-skip-tls-verify \
+                            --plain-http \
                             --confirm
 
                         ls -lh packages/
@@ -295,7 +295,7 @@ spec:
                         # zarf already installed in Build Zarf Package stage (shared /usr/local/bin)
                         cd /workspace
                         zarf package deploy deploy/${PACKAGE_NAME} \
-                            --insecure-skip-tls-verify \
+                            --plain-http \
                             --confirm
                         echo "Deploy complete."
                     """
