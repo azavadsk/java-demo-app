@@ -291,16 +291,17 @@ EOF
                     sh """
                         # Build kubeconfig from in-cluster service account credentials
                         mkdir -p /tmp/.kube
-                        APISERVER=https://kubernetes.default.svc
                         TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-                        CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                        CA_DATA=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt | base64 | tr -d '\\n')
+                        # Use the cluster IP injected by Kubernetes (avoids DNS resolution)
+                        APISERVER=https://\${KUBERNETES_SERVICE_HOST}:\${KUBERNETES_SERVICE_PORT}
 
                         cat > /tmp/.kube/config <<EOF
 apiVersion: v1
 kind: Config
 clusters:
 - cluster:
-    certificate-authority: \${CA}
+    certificate-authority-data: \${CA_DATA}
     server: \${APISERVER}
   name: in-cluster
 contexts:
