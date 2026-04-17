@@ -212,11 +212,18 @@ spec:
         stage('Build Zarf Package') {
             steps {
                 container('builder') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'rustfs-credentials',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )]) {
                     sh """
-                        apk add --no-cache curl 2>/dev/null || true
+                        apk add --no-cache curl aws-cli 2>/dev/null || true
 
-                        curl -sSL -o /usr/local/bin/zarf \
-                            https://github.com/zarf-dev/zarf/releases/download/${ZARF_VERSION}/zarf-linux-amd64
+                        echo "Downloading Zarf ${ZARF_VERSION} from RustFS..."
+                        aws s3 cp s3://${RUSTFS_BUCKET}/zarf_${ZARF_VERSION}_Linux_amd64 \
+                            /usr/local/bin/zarf \
+                            --endpoint-url ${RUSTFS_URL}
                         chmod +x /usr/local/bin/zarf
 
                         cd /workspace
@@ -235,6 +242,7 @@ spec:
 
                         ls -lh packages/
                     """
+                    }
                 }
             }
         }
@@ -284,6 +292,7 @@ spec:
             steps {
                 container('builder') {
                     sh """
+                        # zarf already installed in Build Zarf Package stage (shared /usr/local/bin)
                         cd /workspace
                         zarf package deploy deploy/${PACKAGE_NAME} \
                             --insecure-skip-tls-verify \
