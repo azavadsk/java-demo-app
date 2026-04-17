@@ -1,5 +1,8 @@
-// Java Demo App — full CI/CD pipeline
-// Stages: Maven build → Kaniko image → Trivy scan → Zarf package → RustFS → deploy → ArgoCD
+// Java Demo App — CI/CD pipeline
+// Stages: Maven build → Kaniko image → Trivy scan → Zarf package → RustFS → ArgoCD
+// Image is pushed to the Zarf internal registry by Kaniko.
+// Zarf package is built and stored in RustFS as an airgap artifact (PSA requirement).
+// ArgoCD owns all cluster deployments — no direct Kubernetes apply from the pipeline.
 
 pipeline {
     agent {
@@ -270,62 +273,6 @@ EOF
             }
         }
 
-        stage('Pull from RustFS') {
-            steps {
-                container('builder') {
-                    sh """
-                        mkdir -p /workspace/deploy
-                        AWS_ACCESS_KEY_ID=rustfsadmin AWS_SECRET_ACCESS_KEY=rustfsadmin \
-                        aws s3 cp \
-                            s3://${RUSTFS_BUCKET}/${PACKAGE_NAME} \
-                            /workspace/deploy/${PACKAGE_NAME} \
-                            --endpoint-url ${RUSTFS_URL}
-                    """
-                }
-            }
-        }
-
-        stage('Deploy via Zarf') {
-            steps {
-                container('builder') {
-                    sh """
-                        # Build kubeconfig from in-cluster service account credentials
-                        mkdir -p /tmp/.kube
-                        TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-                        CA_DATA=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt | base64 | tr -d '\\n')
-                        # Use the cluster IP injected by Kubernetes (avoids DNS resolution)
-                        APISERVER=https://\${KUBERNETES_SERVICE_HOST}:\${KUBERNETES_SERVICE_PORT}
-
-                        cat > /tmp/.kube/config <<EOF
-apiVersion: v1
-kind: Config
-clusters:
-- cluster:
-    certificate-authority-data: \${CA_DATA}
-    server: \${APISERVER}
-  name: in-cluster
-contexts:
-- context:
-    cluster: in-cluster
-    user: jenkins
-  name: in-cluster
-current-context: in-cluster
-users:
-- name: jenkins
-  user:
-    token: \${TOKEN}
-EOF
-                        export KUBECONFIG=/tmp/.kube/config
-
-                        zarf package deploy /workspace/deploy/${PACKAGE_NAME} \
-                            --plain-http \
-                            --confirm
-                        echo "Deploy complete."
-                    """
-                }
-            }
-        }
-
         stage('Update ArgoCD Repo') {
             when {
                 expression { params.UPDATE_ARGOCD }
@@ -406,18 +353,6 @@ EOF
             }
         }
 
-        stage('Verify') {
-            steps {
-                container('builder') {
-                    sh """
-                        export KUBECONFIG=/tmp/.kube/config
-                        sleep 15
-                        yum install -y kubectl 2>/dev/null || true
-                        kubectl get pods,svc -n java-demo-app || true
-                    """
-                }
-            }
-        }
     }
 
     post {
