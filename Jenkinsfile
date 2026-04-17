@@ -312,20 +312,53 @@ spec:
 
                             mkdir -p /tmp/argocd-repo/java-demo-app
 
-                            cat > /tmp/argocd-repo/java-demo-app/values.yaml <<EOF
-replicaCount: 1
-image:
-  repository: ${ZARF_REGISTRY}/java-demo-app
-  tag: "${params.SERVICE_VERSION}"
-service:
-  port: 80
-  targetPort: 8080
+                            cat > /tmp/argocd-repo/java-demo-app/deployment.yaml <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-demo-app
+  namespace: java-demo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-demo-app
+  template:
+    metadata:
+      labels:
+        app: java-demo-app
+    spec:
+      containers:
+        - name: java-demo-app
+          image: ${ZARF_REGISTRY}/java-demo-app:${params.SERVICE_VERSION}
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+EOF
+
+                            cat > /tmp/argocd-repo/java-demo-app/service.yaml <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-demo-app
+  namespace: java-demo-app
+spec:
+  selector:
+    app: java-demo-app
+  ports:
+    - port: 80
+      targetPort: 8080
 EOF
 
                             cd /tmp/argocd-repo
                             git config user.email "jenkins@ci"
                             git config user.name "Jenkins CI"
-                            git add java-demo-app/values.yaml
+                            git add java-demo-app/
                             git diff --cached --quiet && echo "No changes" && exit 0
                             git commit -m "ci: java-demo-app v${params.SERVICE_VERSION} [trivy-passed]"
                             git push origin ${ARGOCD_REPO_BRANCH}
