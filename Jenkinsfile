@@ -257,19 +257,15 @@ EOF
         stage('Upload to RustFS') {
             steps {
                 container('builder') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'rustfs-credentials',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )]) {
-                        sh """
-                            cd /workspace
-                            aws s3 cp packages/${PACKAGE_NAME} \
-                                s3://${RUSTFS_BUCKET}/${PACKAGE_NAME} \
-                                --endpoint-url ${RUSTFS_URL}
-                            aws s3 ls s3://${RUSTFS_BUCKET}/ --endpoint-url ${RUSTFS_URL}
-                        """
-                    }
+                    sh """
+                        cd /workspace
+                        AWS_ACCESS_KEY_ID=rustfsadmin AWS_SECRET_ACCESS_KEY=rustfsadmin \
+                        aws s3 cp packages/${PACKAGE_NAME} \
+                            s3://${RUSTFS_BUCKET}/${PACKAGE_NAME} \
+                            --endpoint-url ${RUSTFS_URL}
+                        AWS_ACCESS_KEY_ID=rustfsadmin AWS_SECRET_ACCESS_KEY=rustfsadmin \
+                        aws s3 ls s3://${RUSTFS_BUCKET}/ --endpoint-url ${RUSTFS_URL}
+                    """
                 }
             }
         }
@@ -277,19 +273,14 @@ EOF
         stage('Pull from RustFS') {
             steps {
                 container('builder') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'rustfs-credentials',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )]) {
-                        sh """
-                            mkdir -p /workspace/deploy
-                            aws s3 cp \
-                                s3://${RUSTFS_BUCKET}/${PACKAGE_NAME} \
-                                /workspace/deploy/${PACKAGE_NAME} \
-                                --endpoint-url ${RUSTFS_URL}
-                        """
-                    }
+                    sh """
+                        mkdir -p /workspace/deploy
+                        AWS_ACCESS_KEY_ID=rustfsadmin AWS_SECRET_ACCESS_KEY=rustfsadmin \
+                        aws s3 cp \
+                            s3://${RUSTFS_BUCKET}/${PACKAGE_NAME} \
+                            /workspace/deploy/${PACKAGE_NAME} \
+                            --endpoint-url ${RUSTFS_URL}
+                    """
                 }
             }
         }
