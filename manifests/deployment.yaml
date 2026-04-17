@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-demo-app
+  namespace: java-demo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-demo-app
+  template:
+    metadata:
+      labels:
+        app: java-demo-app
+    spec:
+      containers:
+        - name: java-demo-app
+          image: 192.168.1.233:31999/java-demo-app:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
