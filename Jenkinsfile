@@ -166,6 +166,11 @@ spec:
 
                         trivy image --download-db-only
 
+                        # Use registry credentials so Trivy can pull the image remotely
+                        # TRIVY_USERNAME/PASSWORD are read automatically by Trivy
+                        export TRIVY_USERNAME=zarf-pull
+                        export TRIVY_PASSWORD=chRTykvmxzD~~aZMdD5hNsD8
+
                         trivy image \
                             --severity ${params.TRIVY_SEVERITY} \
                             --ignore-unfixed \
