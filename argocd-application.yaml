@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/azavadsk/argocd
+    repoURL: https://github.com/Edvantis-group/sd-argocd
     targetRevision: main
     path: java-demo-app
   destination:

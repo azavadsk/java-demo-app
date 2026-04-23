@@ -123,7 +123,7 @@ spec:
         ZARF_VERSION       = "${env.ZARF_VERSION ?: 'v0.75.0'}"
         RUSTFS_URL         = "${env.RUSTFS_URL ?: 'http://192.168.1.246:9000'}"
         RUSTFS_BUCKET      = "${env.RUSTFS_BUCKET ?: 'zarf-packages'}"
-        ARGOCD_REPO        = "${env.ARGOCD_REPO ?: 'git@github.com:azavadsk/argocd.git'}"
+        ARGOCD_REPO        = "${env.ARGOCD_REPO ?: 'git@github.com:Edvantis-group/sd-argocd.git'}"
         ARGOCD_REPO_BRANCH = "${env.ARGOCD_REPO_BRANCH ?: 'main'}"
         ZARF_REGISTRY      = "192.168.1.233:31999"
         IMAGE_NAME         = "java-demo-app"
